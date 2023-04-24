@@ -1,4 +1,5 @@
 lib/
-output/
-node_modules
-chatgpt-prompt-keeper-*.zip
+node_modules/
+firefox/
+chrome/
+web-ext-artifacts/

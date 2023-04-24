@@ -8,7 +8,7 @@
 			"matches": ["https://chat.openai.com/*"]
 		}
 	],
-	"permissions": ["tabs", "activeTab"],
+	"permissions": ["tabs", "activeTab", "storage"],
 	"description": "Save last errored chatgpt prompt",
 	"icons": {
 		"16": "assets/icon-16.png",
@@ -19,5 +19,5 @@
 	},
 	"manifest_version": 3,
 	"name": "ChatGPT Prompt Keeper",
-	"version": "0.1"
+	"version": "0.5"
 }

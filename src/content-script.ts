@@ -5,7 +5,7 @@ import {
 	RecievedPrompt,
 	Prompt,
 } from "./types";
-declare const browser: any;
+import Browser from "webextension-polyfill";
 
 const regexPathName = /\/c\/.+/;
 const footprint = "chatgpt-prompt-keeper";
@@ -65,7 +65,7 @@ async function addListener() {
 	if (!!errBtn) {
 		const setPrompt: SetPrompt = { message: MessageType.Set, ...chatPrompt };
 
-		browser.runtime.sendMessage(setPrompt);
+		Browser.runtime.sendMessage(setPrompt);
 
 		return;
 	} else if (!textarea || !form || form.hasAttribute(footprint)) {
@@ -74,7 +74,7 @@ async function addListener() {
 
 	const getPrompt: GetPrompt = { message: MessageType.Get, ...chatPrompt };
 
-	await browser.runtime.sendMessage(getPrompt);
+	await Browser.runtime.sendMessage(getPrompt);
 
 	textarea?.parentElement?.appendChild(button);
 
@@ -106,7 +106,7 @@ function localSave(prompt: string) {
 	chatPrompt.prompt = prompt;
 }
 
-browser.runtime.onMessage.addListener((recieved: RecievedPrompt) => {
+Browser.runtime.onMessage.addListener((recieved: RecievedPrompt) => {
 	button.classList.remove("hidden");
 	chatPrompt.prompt = recieved.prompt;
 });

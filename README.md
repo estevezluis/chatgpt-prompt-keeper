@@ -9,3 +9,7 @@ This extension will save your last prompt when an error occurs to mitigate the e
 The last prompt entry is only stored when an error occurs.
 
 After recovery, the prompt is deleted from localStorage.
+
+## Development
+
+This repo templates the file structure of JoshuaGoldberg [repo](https://github.com/JoshuaKGoldberg/refined-saved-replies)

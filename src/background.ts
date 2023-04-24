@@ -5,34 +5,42 @@ import {
 	RecievedPrompt,
 	GetPrompt,
 } from "./types";
-declare const browser: any;
+import Browser from "webextension-polyfill";
 
-browser.runtime.onMessage.addListener(async (message: Message) => {
+const url = "https://chat.openai.com/c";
+const tabQueryConfig = { active: true, currentWindow: true };
+
+Browser.runtime.onMessage.addListener(async (message: Message) => {
 	console.log("Recieved from content-script:", message);
 
 	if (message.message === MessageType.Set) {
 		const { chatId, prompt } = message as SetPrompt;
 
-		localStorage.setItem(chatId, prompt);
+		await Browser.storage.local.set({ [chatId]: prompt });
 	} else if (message.message === MessageType.Get) {
 		const { chatId } = message as GetPrompt;
 
-		const prompt = localStorage.getItem(chatId);
-
-		if (!prompt) return;
-
-		await browser.tabs.query(
-			{ active: true, currentWindow: true },
-			async (tabs: any) => {
-				const recievedPrompt: RecievedPrompt = {
-					message: MessageType.Recieved,
-					chatId,
-					prompt,
-				};
-				// Send a message to the content script
-				await browser.tabs.sendMessage(tabs[0].id, recievedPrompt);
-				localStorage.removeItem(chatId);
-			}
+		const result: { [key: string]: string } = await Browser.storage.local.get(
+			chatId
 		);
+
+		if (!result) return;
+
+		const prompt = result[chatId];
+
+		const [tab] = await Browser.tabs.query({
+			url: `${url}/${chatId}`,
+			...tabQueryConfig,
+		});
+
+		if (!!tab?.id) {
+			const recievedPrompt: RecievedPrompt = {
+				message: MessageType.Recieved,
+				chatId,
+				prompt,
+			};
+			await Browser.tabs.sendMessage(tab.id, recievedPrompt);
+			await Browser.storage.local.remove(chatId);
+		}
 	}
 });
