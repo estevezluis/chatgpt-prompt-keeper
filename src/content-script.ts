@@ -4,6 +4,7 @@ import {
 	MessageType,
 	RecievedPrompt,
 	Prompt,
+	Message,
 } from "./types";
 import Browser from "webextension-polyfill";
 
@@ -13,10 +14,11 @@ const footprint = "chatgpt-prompt-keeper";
 const button = buildButton();
 const chatPrompt: Prompt = { chatId: "", prompt: "" };
 
-port.onMessage.addListener((recieved: RecievedPrompt) => {
+port.onMessage.addListener((recieved: Message) => {
 	if (recieved.message === MessageType.Recieved) {
+		const { prompt } = recieved as RecievedPrompt;
 		button.classList.remove("hidden");
-		chatPrompt.prompt = recieved.prompt;
+		chatPrompt.prompt = prompt;
 	}
 });
 
@@ -60,7 +62,7 @@ function buildButton() {
 	return repeatBtn;
 }
 
-async function addListener() {
+function addListener() {
 	if (!regexPathName.test(window.location.pathname)) {
 		return;
 	}
@@ -70,7 +72,7 @@ async function addListener() {
 	const textarea = document.querySelector("textarea");
 	const errBtn = document.querySelector("form button.btn-primary");
 
-	if (!!errBtn) {
+	if (errBtn) {
 		const setPrompt: SetPrompt = { message: MessageType.Set, ...chatPrompt };
 
 		port.postMessage(setPrompt);
@@ -85,7 +87,7 @@ async function addListener() {
 
 	port.postMessage(getPrompt);
 
-	textarea?.parentElement?.appendChild(button);
+	textarea.parentElement?.appendChild(button);
 
 	button.addEventListener("click", (event) => {
 		event.preventDefault();
@@ -97,13 +99,13 @@ async function addListener() {
 	form.addEventListener("submit", (event) => {
 		event.preventDefault();
 
-		const prompt = textarea?.value ?? "";
+		const prompt = textarea.value;
 
 		if (prompt.length > 0) localSave(prompt);
 	});
 
-	textarea?.addEventListener("keydown", (event) => {
-		const prompt = textarea?.value ?? "";
+	textarea.addEventListener("keydown", (event) => {
+		const prompt = textarea.value;
 		if (event.code === "Enter" && prompt.length > 0) {
 			localSave(prompt);
 		}

@@ -1,3 +1,4 @@
+/* eslint @typescript-eslint/consistent-type-definitions: ["error", "type"] */
 export enum MessageType {
 	Get = "GET",
 	Set = "SET",
