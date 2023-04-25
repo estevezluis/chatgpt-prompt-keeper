@@ -7,40 +7,37 @@ import {
 } from "./types";
 import Browser from "webextension-polyfill";
 
-const url = "https://chat.openai.com/c";
-const tabQueryConfig = { active: true, currentWindow: true };
-
-Browser.runtime.onMessage.addListener(async (message: Message) => {
-	console.log("Recieved from content-script:", message);
-
-	if (message.message === MessageType.Set) {
-		const { chatId, prompt } = message as SetPrompt;
-
-		await Browser.storage.local.set({ [chatId]: prompt });
-	} else if (message.message === MessageType.Get) {
-		const { chatId } = message as GetPrompt;
-
-		const result: { [key: string]: string } = await Browser.storage.local.get(
-			chatId
-		);
-
-		if (!result) return;
-
-		const prompt = result[chatId];
-
-		const [tab] = await Browser.tabs.query({
-			url: `${url}/${chatId}`,
-			...tabQueryConfig,
+Browser.runtime.onConnect.addListener((port: Browser.Runtime.Port) => {
+	if (port.name === "chatgpt-prompt-keeper") {
+		port.onMessage.addListener((message: Message) => {
+			if (message.message === MessageType.Set) {
+				savePrompt(message as SetPrompt);
+			} else if (message.message === MessageType.Get) {
+				sendPrompt(message as GetPrompt, port);
+			}
 		});
-
-		if (!!tab?.id) {
-			const recievedPrompt: RecievedPrompt = {
-				message: MessageType.Recieved,
-				chatId,
-				prompt,
-			};
-			await Browser.tabs.sendMessage(tab.id, recievedPrompt);
-			await Browser.storage.local.remove(chatId);
-		}
 	}
 });
+
+async function savePrompt({ chatId, prompt }: SetPrompt) {
+	await Browser.storage.local.set({ [chatId]: prompt });
+}
+
+async function sendPrompt(message: GetPrompt, port: Browser.Runtime.Port) {
+	const { chatId } = message as GetPrompt;
+
+	const result: { [key: string]: string } = await Browser.storage.local.get(
+		chatId
+	);
+
+	if (!result || !result[chatId]) return;
+
+	const prompt = result[chatId];
+	const recievedPrompt: RecievedPrompt = {
+		message: MessageType.Recieved,
+		chatId,
+		prompt,
+	};
+	port.postMessage(recievedPrompt);
+	await Browser.storage.local.remove(chatId);
+}

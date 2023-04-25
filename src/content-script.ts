@@ -7,10 +7,18 @@ import {
 } from "./types";
 import Browser from "webextension-polyfill";
 
+const port = Browser.runtime.connect({ name: "chatgpt-prompt-keeper" });
 const regexPathName = /\/c\/.+/;
 const footprint = "chatgpt-prompt-keeper";
 const button = buildButton();
 const chatPrompt: Prompt = { chatId: "", prompt: "" };
+
+port.onMessage.addListener((recieved: RecievedPrompt) => {
+	if (recieved.message === MessageType.Recieved) {
+		button.classList.remove("hidden");
+		chatPrompt.prompt = recieved.prompt;
+	}
+});
 
 function addObserver(callback: MutationCallback) {
 	const options = { childList: true, subtree: true };
@@ -65,16 +73,17 @@ async function addListener() {
 	if (!!errBtn) {
 		const setPrompt: SetPrompt = { message: MessageType.Set, ...chatPrompt };
 
-		Browser.runtime.sendMessage(setPrompt);
+		port.postMessage(setPrompt);
 
 		return;
 	} else if (!textarea || !form || form.hasAttribute(footprint)) {
 		return;
 	}
+	form.setAttribute(footprint, "true");
 
 	const getPrompt: GetPrompt = { message: MessageType.Get, ...chatPrompt };
 
-	await Browser.runtime.sendMessage(getPrompt);
+	port.postMessage(getPrompt);
 
 	textarea?.parentElement?.appendChild(button);
 
@@ -85,8 +94,7 @@ async function addListener() {
 		button.classList.add("hidden");
 	});
 
-	form?.setAttribute(footprint, "true");
-	form?.addEventListener("submit", (event) => {
+	form.addEventListener("submit", (event) => {
 		event.preventDefault();
 
 		const prompt = textarea?.value ?? "";
@@ -105,8 +113,3 @@ async function addListener() {
 function localSave(prompt: string) {
 	chatPrompt.prompt = prompt;
 }
-
-Browser.runtime.onMessage.addListener((recieved: RecievedPrompt) => {
-	button.classList.remove("hidden");
-	chatPrompt.prompt = recieved.prompt;
-});
