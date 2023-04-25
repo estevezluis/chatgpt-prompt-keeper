@@ -8,7 +8,7 @@
 			"matches": ["https://chat.openai.com/*"]
 		}
 	],
-	"permissions": ["tabs", "activeTab", "storage"],
+	"permissions": ["storage"],
 	"description": "Save last errored chatgpt prompt",
 	"icons": {
 		"16": "assets/icon-16.png",
